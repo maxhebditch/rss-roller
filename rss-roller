@@ -62,7 +62,6 @@ for posts in "${postArray[@]}"; do
         item $post
 done
 
-
 header
 footer
 cat feedtop feed > feedtb
