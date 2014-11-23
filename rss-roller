@@ -1,0 +1,68 @@
+#!/bin/bash
+
+feedname=maxhebditchrss.xml
+website=http://www.maxhebditch.co.uk/posts
+postDir=/var/www/posts
+title="Max Hebditch"
+description="Blog of Max Hebditch"
+link=http://www.maxhebditch.co.uk
+
+
+header () {
+echo '''<?xml version="1.0" encoding="UTF-8" ?>
+<rss version="2.0">
+''' > feedtop
+echo """
+<channel>
+<title>$title</title>
+<link>$link</link>
+<description>$description</description>
+""" >> feedtop
+echo "adding the header"
+}
+
+footer () {
+echo """
+</channel>
+
+</rss>
+""" >> feedbottom
+echo "adding the footer"
+}
+
+item () {
+echo "adding post $postNum"
+fullTitle=$(grep -o '>.*</h1>' $post | sed 's/\(>\|<\/h1>\)//g')
+linkadd="$website"/"$post"
+extract=$(sed -n '/<p>.*/,/*.<\/p>/{p;q;}' $post | sed -e 's/<[^>]\+>/ /g' -e 's|<p>||g' -e 's|</p>||g' -e 's|"||g')
+echo """<item>
+<title>$fullTitle</title>
+<link>$linkadd</link>
+<description>$extract</description>
+</item>""" >> feed
+}
+
+#Do the bad thing
+if [[ -f $feedname ]]; then
+        rm $feedname
+fi
+
+touch $feedname
+
+postArray=( $(ls "$postDir"/*.html) )
+numPosts=$(ls "$postDir"/*.html | wc -l)
+echo "numposts is $numPosts"
+postNum=0
+
+for posts in "${postArray[@]}"; do
+        let postNum+=1
+        post=$posts
+        item $post
+done
+
+
+header
+footer
+cat feedtop feed > feedtb
+cat feedtb feedbottom > $feedname
+rm feedtop feed feedtb feedbottom
