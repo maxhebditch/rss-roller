@@ -6,18 +6,20 @@ postDir=/var/www/posts
 title="Max Hebditch"
 description="Blog of Max Hebditch"
 link=http://www.maxhebditch.co.uk
+rsslink="$link/$feedname"
 
 
 header () {
-echo '''<?xml version="1.0" encoding="UTF-8" ?>
-<rss version="2.0">
+echo """<?xml version='1.0' encoding='UTF-8' ?>
+<rss version='2.0' xmlns:atom='http://www.w3.org/2005/Atom'>
 <!-- Made using https://github.com/maxhebditch/rss-roller -->
-''' > feedtop
+""" > feedtop
 echo """
 <channel>
 <title>$title</title>
 <link>$link</link>
 <description>$description</description>
+<atom:link href='$rsslink' rel='self' type='application/rss+xml' />
 """ >> feedtop
 echo "adding the header"
 }
@@ -34,11 +36,13 @@ echo "adding the footer"
 item () {
 echo "adding post $postNum/$numPosts"
 fullTitle=$(grep -o '>.*</h1>' $post | sed 's/\(>\|<\/h1>\)//g')
-linkadd="$website"/"$post"
+postname=${post##*/}
+linkadd="$website"/"$postname"
 extract=$(sed -n '/<p>.*/,/*.<\/p>/{p;q;}' $post | sed -e 's/<[^>]\+>/ /g' -e 's|<p>||g' -e 's|</p>||g' -e 's|"||g')
 echo """<item>
 <title>$fullTitle</title>
 <link>$linkadd</link>
+<guid>$linkadd</guid>
 <description>$extract</description>
 </item>
 """ >> feed
