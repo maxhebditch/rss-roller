@@ -34,11 +34,6 @@ echo "adding the footer"
 }
 
 item () {
-echo "adding post $postNum/$numPosts"
-fullTitle=$(grep -o '>.*</h1>' $post | sed 's/\(>\|<\/h1>\)//g')
-postname=${post##*/}
-linkadd="$website"/"$postname"
-extract=$(sed -n '/<p>.*/,/*.<\/p>/{p;q;}' $post | sed -e 's/<[^>]\+>/ /g' -e 's|<p>||g' -e 's|</p>||g' -e 's|"||g')
 echo """<item>
 <title>$fullTitle</title>
 <link>$linkadd</link>
@@ -48,26 +43,59 @@ echo """<item>
 """ >> feed
 }
 
-#Do the bad thing
-if [[ -f $feedname ]]; then
-        rm $feedname
+combine () {
+        header
+        footer
+        cat feedtop feed > feedtb
+        cat feedtb feedbottom > $feedname
+        rm feedtop feed feedtb feedbottom
+}
+
+if [[ $1 == "--auto" ]]; then
+        #Do the bad thing
+        if [[ -f $feedname ]]; then
+                rm $feedname
+        fi
+
+        touch $feedname
+
+        postArray=( $(ls -r "$postDir"/*.html) )
+        numPosts=$(ls "$postDir"/*.html | wc -l)
+        echo "numposts is $numPosts"
+        postNum=0
+
+        for posts in "${postArray[@]}"; do
+                let postNum+=1
+                post=$posts
+                echo "adding post $postNum/$numPosts"
+                fullTitle=$(grep -o '>.*</h1>' $post | sed 's/\(>\|<\/h1>\)//g')
+                postname=${post##*/}
+                linkadd="$website"/"$postname"
+                extract=$(sed -n '/<p>.*/,/*.<\/p>/{p;q;}' $post | sed -e 's/<[^>]\+>/ /g' -e 's|<p>||g' -e 's|</p>||g' -e 's|"||g')
+                item $post
+        done
+        combine
+        exit
 fi
 
-touch $feedname
+if [[ $1 == "--manual" ]]; then
+        read -p "What is the title of the new update?: " fullTitle
+        read -p "What is the link of the new update?: " linkadd
+        read -p "Provide a description of the new update: " extract
+        read -p "Provide a unique identifier for the update: " extract
+        if [[ ! -f $feedname ]]; then
+                echo "feed does not exit already, going to make from scratch"
+                touch $feedname
+                read -p "What is your website called?: " title
+                read -p "What is the link to the website?: " link
+                read -p "Give a brief description of your website: " description
+                read -p "Give the link to where the rss feed will live: " rsslink
+        else
+                sed -e '1,3d' < $feedname
+        fi
+        item
+        combine
+        exit
+fi
 
-postArray=( $(ls -r "$postDir"/*.html) )
-numPosts=$(ls "$postDir"/*.html | wc -l)
-echo "numposts is $numPosts"
-postNum=0
-
-for posts in "${postArray[@]}"; do
-        let postNum+=1
-        post=$posts
-        item $post
-done
-
-header
-footer
-cat feedtop feed > feedtb
-cat feedtb feedbottom > $feedname
-rm feedtop feed feedtb feedbottom
+echo "please use the --auto or --manual flag"
