@@ -1,18 +1,9 @@
 #!/bin/bash
 
-# feedname=maxhebditchrss.xml
-# website=http://www.maxhebditch.co.uk/posts
-# postDir=/var/www/posts
-# title="Max Hebditch"
-# description="Blog of Max Hebditch"
-# link=http://www.maxhebditch.co.uk
-# rsslink="$link/$feedname"
-
-
 header () {
 echo """<?xml version='1.0' encoding='UTF-8' ?>
 <rss version='2.0' xmlns:atom='http://www.w3.org/2005/Atom'>
-<!-- Made using https://github.com/maxhebditch/rss-roller -->
+<!-- Made using rss-roller -->
 """ > feedtop
 echo """
 <channel>
@@ -111,12 +102,12 @@ if [[ $1 == "--manual" ]]; then
         read -p "Provide a description of the new update: " extract
         read -p "Provide a unique identifier for the update: " extract
         if [[ -f $feedname ]]; then
-                sed -e '1,3d' -i < $feedname
-                head -n -4 $feedname > rssrollerbottomless
-                mv rssrollerbottomless $feedname
-                mv $feedname $feedname-old
+                sed -e '1,10d' $feedname > rssrollertopless
+                head -n -4 rssrollertopless > rssrollertopandbottomless
+                mv rssrollertopandbottomless $feedname-old
+                rm rssrollertopless
+                rm $feedname
         fi
-        mv $feedname feed
         item
         if [[ -f $feedname-old ]]; then
                 mv feed feedtop
