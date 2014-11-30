@@ -1,12 +1,12 @@
 #!/bin/bash
 
-feedname=maxhebditchrss.xml
-website=http://www.maxhebditch.co.uk/posts
-postDir=/var/www/posts
-title="Max Hebditch"
-description="Blog of Max Hebditch"
-link=http://www.maxhebditch.co.uk
-rsslink="$link/$feedname"
+# feedname=maxhebditchrss.xml
+# website=http://www.maxhebditch.co.uk/posts
+# postDir=/var/www/posts
+# title="Max Hebditch"
+# description="Blog of Max Hebditch"
+# link=http://www.maxhebditch.co.uk
+# rsslink="$link/$feedname"
 
 
 header () {
@@ -51,14 +51,37 @@ combine () {
         rm feedtop feed feedtb feedbottom
 }
 
+makeRSS () {
+        echo "feed does not exit already, going to make from scratch"
+        echo """
+        CONFIGURATION
+        =============
+        """
+        read -p "What is your website called?: " title
+        read -p "What is the link to the website?: " link
+        read -p "Give a brief description of your website: " description
+        read -p "Give the link to where the rss feed will live: " rsslink
+        read -p "What will be the name of feed file?:  " feedname
+        echo -e "title=$title\nlink=$link\ndescription=$description\nrsslink=$rsslink\nfeedname=$feedname" > .rss-roller.rc
+}
+        
+if [[ ! -f ".rss-roller.rc" ]]; then
+        makeRSS
+fi
+
+source .rss-roller.rc
+
+if [[ ! -f $feedname ]]; then
+        touch $feedname
+fi
+
+
 if [[ $1 == "--auto" ]]; then
         #Do the bad thing
         if [[ -f $feedname ]]; then
                 rm $feedname
         fi
-
         touch $feedname
-
         postArray=( $(ls -r "$postDir"/*.html) )
         numPosts=$(ls "$postDir"/*.html | wc -l)
         echo "numposts is $numPosts"
@@ -79,21 +102,27 @@ if [[ $1 == "--auto" ]]; then
 fi
 
 if [[ $1 == "--manual" ]]; then
+        echo """
+        NEW POST
+        =======
+        """
         read -p "What is the title of the new update?: " fullTitle
         read -p "What is the link of the new update?: " linkadd
         read -p "Provide a description of the new update: " extract
         read -p "Provide a unique identifier for the update: " extract
-        if [[ ! -f $feedname ]]; then
-                echo "feed does not exit already, going to make from scratch"
-                touch $feedname
-                read -p "What is your website called?: " title
-                read -p "What is the link to the website?: " link
-                read -p "Give a brief description of your website: " description
-                read -p "Give the link to where the rss feed will live: " rsslink
-        else
-                sed -e '1,3d' < $feedname
+        if [[ -f $feedname ]]; then
+                sed -e '1,3d' -i < $feedname
+                head -n -4 $feedname > rssrollerbottomless
+                mv rssrollerbottomless $feedname
+                mv $feedname $feedname-old
         fi
+        mv $feedname feed
         item
+        if [[ -f $feedname-old ]]; then
+                mv feed feedtop
+                cat feedtop $feedname-old > feed
+                rm $feedname-old feedtop
+        fi
         combine
         exit
 fi
